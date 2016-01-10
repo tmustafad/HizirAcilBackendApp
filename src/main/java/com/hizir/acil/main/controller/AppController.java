@@ -2,8 +2,11 @@ package com.hizir.acil.main.controller;
 
 
 import com.hizir.acil.main.model.Donor;
+import com.hizir.acil.main.service.DonorService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
 import org.springframework.validation.BindingResult;
@@ -11,6 +14,8 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 
 import javax.validation.Valid;
 import java.util.List;
@@ -27,20 +32,32 @@ import java.util.Locale;
 public class AppController {
 
     @Autowired
-    EmployeeService service;
+    DonorService service;
 
     @Autowired
     MessageSource messageSource;
 
-    /*
-     * This method will list all existing Donors.
+/*
+     * This method will list all existing Donors in for JSP .
      */
-    @RequestMapping(value = { "/", "/list" }, method = RequestMethod.GET)
+
+    @RequestMapping(value = { "/", "/listAllDonors" }, method = RequestMethod.GET)
     public String listDonors(ModelMap model) {
 
         List<Donor> donors = service.findAllDonors();
         model.addAttribute("donors", donors);
         return "alldonors";
+    }
+    /*
+     * This method will list all existing Donors in json format.
+     */
+    @RequestMapping(value = {  "/listjson" }, method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<List<Donor>> listDonors() {
+        List<Donor> donors = service.findAllDonors();
+        if (donors.isEmpty()) {
+            return new ResponseEntity<List<Donor>>(HttpStatus.NO_CONTENT);
+        }
+        return new ResponseEntity<List<Donor>>(donors, HttpStatus.OK);
     }
 
     /*
@@ -90,9 +107,9 @@ public class AppController {
     /*
      * This method will provide the medium to update an existing Donor.
      */
-    @RequestMapping(value = { "/edit-{id}-employee" }, method = RequestMethod.GET)
-    public String editDonor(@PathVariable Long id, ModelMap model) {
-        Donor donor= service.findDonorById(id);
+    @RequestMapping(value = { "/edit-{id}-donor" }, method = RequestMethod.GET)
+    public String editDonor(@PathVariable int id, ModelMap model) {
+        Donor donor= service.findById(id);
         model.addAttribute("donor", donor);
         model.addAttribute("edit", true);
         return "registration";
@@ -102,9 +119,9 @@ public class AppController {
      * This method will be called on form submission, handling POST request for
      * updating donor in database. It also validates the user input
      */
-    @RequestMapping(value = { "/edit-{id}-employee" }, method = RequestMethod.POST)
+    @RequestMapping(value = { "/edit-{id}-donor" }, method = RequestMethod.POST)
     public String updateDonor(@Valid Donor donor, BindingResult result,
-                                 ModelMap model, @PathVariable String ssn) {
+                                 ModelMap model, @PathVariable int id) {
 
         if (result.hasErrors()) {
             return "registration";
@@ -124,12 +141,12 @@ public class AppController {
 
 
     /*
-     * This method will delete an employee by it's SSN value.
+     * This method will delete a donor  by it's id value.
      */
-    @RequestMapping(value = { "/delete-{ssn}-employee" }, method = RequestMethod.GET)
-    public String deleteEmployee(@PathVariable String ssn) {
-        service.deleteEmployeeBySsn(ssn);
-        return "redirect:/list";
+    @RequestMapping(value = { "/delete-{id}-donor" }, method = RequestMethod.GET)
+    public String deleteDonorById(@PathVariable int id) {
+        service.deleteDonorById(id);
+        return "redirect:/listAllDonors";
     }
 
 }
